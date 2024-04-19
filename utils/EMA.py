@@ -16,11 +16,12 @@ from torch.optim import Optimizer
 
 class EMA(Optimizer):
     def __init__(self, opt, ema_decay):
+        super().__init__(opt.param_groups,opt.state)
         self.ema_decay = ema_decay
         self.apply_ema = self.ema_decay > 0.
         self.optimizer = opt
-        self.state = opt.state
-        self.param_groups = opt.param_groups
+        # self.param_groups = opt.param_groups
+        # self.state = opt.state
 
     def step(self, *args, **kwargs):
         retval = self.optimizer.step(*args, **kwargs)

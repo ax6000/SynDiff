@@ -20,7 +20,8 @@ import torch.distributed as dist
 import shutil
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
-
+from torchinfo import summary
+import tqdm
 
 def copy_source(file, output_dir):
     shutil.copyfile(file, os.path.join(output_dir, os.path.basename(file)))
@@ -369,7 +370,7 @@ def train_syndiff(rank, gpu, args):
     for epoch in range(init_epoch, args.num_epoch+1):
         train_sampler.set_epoch(epoch)
        
-        for iteration, (x1, x2) in enumerate(data_loader):
+        for iteration, (x1, x2) in enumerate(tqdm.tqdm(data_loader)):
             for p in disc_diffusive_1.parameters():  
                 p.requires_grad = True  
             for p in disc_diffusive_2.parameters():  
@@ -720,7 +721,8 @@ def init_processes(rank, size, fn, args):
     os.environ['MASTER_PORT'] = args.port_num
     torch.cuda.set_device(args.local_rank)
     gpu = args.local_rank
-    dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=size)
+    dist.init_process_group(backend='gloo', init_method='env://', rank=rank, world_size=size)
+    # dist.init_process_group(backend='nccl', rank=rank, world_size=size)
     fn(rank, gpu, args)
     dist.barrier()
     cleanup()  
@@ -815,8 +817,8 @@ if __name__ == '__main__':
                         help='lazy regulariation.')
 
     parser.add_argument('--save_content', action='store_true',default=False)
-    parser.add_argument('--save_content_every', type=int, default=10, help='save content for resuming every x epochs')
-    parser.add_argument('--save_ckpt_every', type=int, default=10, help='save ckpt every x epochs')
+    parser.add_argument('--save_content_every', type=int, default=1, help='save content for resuming every x epochs')
+    parser.add_argument('--save_ckpt_every', type=int, default=1, help='save ckpt every x epochs')
     parser.add_argument('--lambda_l1_loss', type=float, default=0.5, help='weightening of l1 loss part of diffusion ans cycle models')
    
     ###ddp

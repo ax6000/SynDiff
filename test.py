@@ -2,7 +2,7 @@
 import argparse
 import torch
 import numpy as np, h5py
-
+from tqdm import tqdm
 import os
 import torch.optim as optim
 import torchvision
@@ -180,14 +180,14 @@ def sample_and_test(args):
          
     save_dir = exp_path + "/generated_samples/epoch_{}".format(epoch_chosen)
     
-    crop = transforms.CenterCrop((256, 152))
+    # crop = transforms.CenterCrop((256, 152))
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     loss1 = np.zeros((1,len(data_loader)))
     loss2 = np.zeros((1,len(data_loader)))
     syn_im1=np.zeros((256,256,len(data_loader)))
     syn_im2=np.zeros((256,256,len(data_loader)))
-    for iteration, (x , y) in enumerate(data_loader): 
+    for iteration, (x , y) in enumerate(tqdm(data_loader)): 
         
         real_data = x.to(device, non_blocking=True)
         source_data = y.to(device, non_blocking=True)
@@ -201,17 +201,17 @@ def sample_and_test(args):
         source_data = to_range_0_1(source_data); source_data = source_data/source_data.max() 
         
         
-        fake_sample1 = crop(fake_sample1) 
-        real_data = crop(real_data)
-        source_data = crop(source_data) 
+        # fake_sample1 = crop(fake_sample1) 
+        # real_data = crop(real_data)
+        # source_data = crop(source_data) 
         syn_im1[:,:,iteration]=np.squeeze(fake_sample1.cpu().numpy())
         
         loss1[0, iteration] = psnr(fake_sample1, real_data).cpu().numpy()
-        print(str(iteration))
+        # print(str(iteration))
         fake_sample1 = torch.cat((source_data, fake_sample1, real_data),axis=-1)
         torchvision.utils.save_image(fake_sample1, '{}/{}_samples1_{}.jpg'.format(save_dir, phase, iteration), normalize=True)
 
-    for iteration, (x , y) in enumerate(data_loader): 
+    for iteration, (x , y) in enumerate(tqdm(data_loader)): 
         
         real_data = y.to(device, non_blocking=True)
         source_data = x.to(device, non_blocking=True)
@@ -227,13 +227,13 @@ def sample_and_test(args):
         
         
         
-        fake_sample2 = crop(fake_sample2) 
-        real_data = crop(real_data)
-        source_data = crop(source_data)
+        # fake_sample2 = crop(fake_sample2) 
+        # real_data = crop(real_data)
+        # source_data = crop(source_data)
         syn_im2[:,:,iteration]=np.squeeze(fake_sample2.cpu().numpy()) 
         
         loss2[0, iteration] = psnr(fake_sample2, real_data).cpu().numpy()
-        print(str(iteration))
+        # print(str(iteration))
         fake_sample2 = torch.cat((source_data, fake_sample2, real_data),axis=-1)
         torchvision.utils.save_image(fake_sample2, '{}/{}_samples2_{}.jpg'.format(save_dir, phase, iteration), normalize=True)
 
