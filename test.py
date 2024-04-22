@@ -221,9 +221,9 @@ def sample_and_test(args):
         fake_sample2 = sample_from_model(pos_coeff, gen_diffusive_2, args.num_timesteps, x2_t, T, args)
     
         
-        fake_sample2 = to_range_0_1(fake_sample2) ; fake_sample2 = fake_sample2/fake_sample2.max()
-        real_data = to_range_0_1(real_data) ; real_data = real_data/real_data.max()
-        source_data = to_range_0_1(source_data); source_data = source_data/source_data.max() 
+        # fake_sample2 = to_range_0_1(fake_sample2) ; fake_sample2 = fake_sample2/fake_sample2.max()
+        # real_data = to_range_0_1(real_data) ; real_data = real_data/real_data.max()
+        # source_data = to_range_0_1(source_data); source_data = source_data/source_data.max() 
         
         
         
@@ -235,7 +235,7 @@ def sample_and_test(args):
         loss2[0, iteration] = psnr(fake_sample2, real_data).cpu().numpy()
         # print(str(iteration))
         fake_sample2 = torch.cat((source_data, fake_sample2, real_data),axis=-1)
-        torchvision.utils.save_image(fake_sample2, '{}/{}_samples2_{}.jpg'.format(save_dir, phase, iteration), normalize=True)
+        # torchvision.utils.save_image(fake_sample2, '{}/{}_samples2_{}.jpg'.format(save_dir, phase, iteration), normalize=True)
 
     print(np.nanmean(loss1))
     np.save('{}/psnr_values1.npy'.format(save_dir), loss1)

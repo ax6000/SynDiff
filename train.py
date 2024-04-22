@@ -192,6 +192,7 @@ def train_syndiff(rank, gpu, args):
     
     import backbones.generator_resnet 
     
+    from torch.utils.tensorboard import SummaryWriter
     
     from utils.EMA import EMA
     
@@ -320,7 +321,9 @@ def train_syndiff(rank, gpu, args):
             copy_source(__file__, exp_path)
             shutil.copytree('./backbones', os.path.join(exp_path, 'backbones'))
     
-    
+    os.makedirs(os.path.join(exp_path,"log"),exist_ok=True)
+    writer = SummaryWriter(log_dir=os.path.join(exp_path,"log"))
+
     coeff = Diffusion_Coefficients(args, device)
     pos_coeff = Posterior_Coefficients(args, device)
     T = get_time_schedule(args, device)
@@ -592,7 +595,15 @@ def train_syndiff(rank, gpu, args):
             
             global_step += 1
             if iteration % 100 == 0:
+                n_iter = iteration + epoch * len(data_loader)
                 if rank == 0:
+                    writer.add_scalar("train/G-Cycle",errG_cycle.item(),n_iter)
+                    writer.add_scalar("train/G-L1",errG_L1.item(),n_iter)
+                    writer.add_scalar("train/G-Adv",errG_adv.item(),n_iter)
+                    writer.add_scalar("train/G-cycle-Adv",errG_cycle_adv.item(),n_iter)
+                    writer.add_scalar("train/G-Sum",errG.item(),n_iter)
+                    writer.add_scalar("train/D-Loss",errD.item(),n_iter)
+                    writer.add_scalar("train/D-Cycle-Loss",errD_cycle.item(),n_iter)
                     print('epoch {} iteration{}, G-Cycle: {}, G-L1: {}, G-Adv: {}, G-cycle-Adv: {}, G-Sum: {}, D Loss: {}, D_cycle Loss: {}'.format(epoch,iteration, errG_cycle.item(), errG_L1.item(),  errG_adv.item(), errG_cycle_adv.item(), errG.item(), errD.item(), errD_cycle.item()))
         
         if not args.no_lr_decay:
@@ -616,6 +627,7 @@ def train_syndiff(rank, gpu, args):
             fake_sample1 = sample_from_model(pos_coeff, gen_diffusive_1, args.num_timesteps, x1_t, T, args)
             fake_sample1 = torch.cat((real_data2, fake_sample1),axis=-1)
             torchvision.utils.save_image(fake_sample1, os.path.join(exp_path, 'sample1_discrete_epoch_{}.png'.format(epoch)), normalize=True)
+            writer.add_image('train/sample1_discrete',fake_sample1,epoch)
             pred1 = gen_non_diffusive_2to1(real_data2)
             #
             x2_t = torch.cat((torch.randn_like(real_data2), pred1),axis=1)
@@ -623,12 +635,13 @@ def train_syndiff(rank, gpu, args):
             #
             pred1 = torch.cat((real_data2, pred1, gen_non_diffusive_1to2(pred1), fake_sample2_tilda[:,[0],:]),axis=-1)
             torchvision.utils.save_image(pred1, os.path.join(exp_path, 'sample1_translated_epoch_{}.png'.format(epoch)), normalize=True)
-
+            writer.add_image('train/sample1_translated',pred1,epoch)
 
             x2_t = torch.cat((torch.randn_like(real_data2),real_data1),axis=1)
             fake_sample2 = sample_from_model(pos_coeff, gen_diffusive_2, args.num_timesteps, x2_t, T, args)
             fake_sample2 = torch.cat((real_data1, fake_sample2),axis=-1)
             torchvision.utils.save_image(fake_sample2, os.path.join(exp_path, 'sample2_discrete_epoch_{}.png'.format(epoch)), normalize=True)
+            writer.add_image('train/sample1_discrete',fake_sample2,epoch)
             pred2 = gen_non_diffusive_1to2(real_data1)
             #
             x1_t = torch.cat((torch.randn_like(real_data1), pred2),axis=1)
@@ -636,7 +649,7 @@ def train_syndiff(rank, gpu, args):
             #            
             pred2 = torch.cat((real_data1, pred2, gen_non_diffusive_2to1(pred2), fake_sample1_tilda[:,[0],:]),axis=-1)
             torchvision.utils.save_image(pred2, os.path.join(exp_path, 'sample2_translated_epoch_{}.png'.format(epoch)), normalize=True)
-           
+            writer.add_image('train/sample2_translated',pred2,epoch)
             if args.save_content:
                 if epoch % args.save_content_every == 0:
                     print('Saving content.')
@@ -689,7 +702,8 @@ def train_syndiff(rank, gpu, args):
             val_l1_loss[0,epoch,iteration]=abs(fake_sample1 -real_data).mean()
             
             val_psnr_values[0,epoch, iteration] = psnr(real_data,fake_sample1, data_range=real_data.max())
-
+            writer.add_scalar("val/sample1_l1_loss",val_l1_loss[0,epoch,iteration],iteration+epoch*len(data_loader_val))
+            writer.add_scalar("val/sample1_psnr",val_psnr_values[0,epoch, iteration],iteration+epoch*len(data_loader_val))
         for iteration, (y_val , x_val) in enumerate(data_loader_val): 
         
             real_data = x_val.to(device, non_blocking=True)
@@ -708,7 +722,9 @@ def train_syndiff(rank, gpu, args):
             val_l1_loss[1,epoch,iteration]=abs(fake_sample1 -real_data).mean()
             
             val_psnr_values[1,epoch, iteration] = psnr(real_data,fake_sample1, data_range=real_data.max())
-
+            writer.add_scalar("val/sample2_l1_loss",val_l1_loss[1,epoch,iteration],iteration+epoch*len(data_loader_val))
+            writer.add_scalar("val/sample2_psnr",val_psnr_values[1,epoch, iteration],iteration+epoch*len(data_loader_val))
+  
         print(np.nanmean(val_psnr_values[0,epoch,:]))
         print(np.nanmean(val_psnr_values[1,epoch,:]))
         np.save('{}/val_l1_loss.npy'.format(exp_path), val_l1_loss)
