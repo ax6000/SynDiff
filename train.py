@@ -597,13 +597,13 @@ def train_syndiff(rank, gpu, args):
             if iteration % 100 == 0:
                 n_iter = iteration + epoch * len(data_loader)
                 if rank == 0:
-                    writer.add_scalar("train/G-Cycle",errG_cycle.item(),n_iter)
-                    writer.add_scalar("train/G-L1",errG_L1.item(),n_iter)
-                    writer.add_scalar("train/G-Adv",errG_adv.item(),n_iter)
-                    writer.add_scalar("train/G-cycle-Adv",errG_cycle_adv.item(),n_iter)
-                    writer.add_scalar("train/G-Sum",errG.item(),n_iter)
-                    writer.add_scalar("train/D-Loss",errD.item(),n_iter)
-                    writer.add_scalar("train/D-Cycle-Loss",errD_cycle.item(),n_iter)
+                    writer.add_scalar("train/G-Cycle",errG_cycle.item().mean(),n_iter)
+                    writer.add_scalar("train/G-L1",errG_L1.item().mean(),n_iter)
+                    writer.add_scalar("train/G-Adv",errG_adv.item().mean(),n_iter)
+                    writer.add_scalar("train/G-cycle-Adv",errG_cycle_adv.item().mean(),n_iter)
+                    writer.add_scalar("train/G-Sum",errG.item().mean(),n_iter)
+                    writer.add_scalar("train/D-Loss",errD.item().mean(),n_iter)
+                    writer.add_scalar("train/D-Cycle-Loss",errD_cycle.item().mean(),n_iter)
                     print('epoch {} iteration{}, G-Cycle: {}, G-L1: {}, G-Adv: {}, G-cycle-Adv: {}, G-Sum: {}, D Loss: {}, D_cycle Loss: {}'.format(epoch,iteration, errG_cycle.item(), errG_L1.item(),  errG_adv.item(), errG_cycle_adv.item(), errG.item(), errD.item(), errD_cycle.item()))
         
         if not args.no_lr_decay:
