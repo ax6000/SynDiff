@@ -627,7 +627,7 @@ def train_syndiff(rank, gpu, args):
             fake_sample1 = sample_from_model(pos_coeff, gen_diffusive_1, args.num_timesteps, x1_t, T, args)
             fake_sample1 = torch.cat((real_data2, fake_sample1),axis=-1)
             torchvision.utils.save_image(fake_sample1, os.path.join(exp_path, 'sample1_discrete_epoch_{}.png'.format(epoch)), normalize=True)
-            writer.add_image('train/sample1_discrete',fake_sample1,epoch)
+            writer.add_images('train/sample1_discrete',fake_sample1,epoch)
             pred1 = gen_non_diffusive_2to1(real_data2)
             #
             x2_t = torch.cat((torch.randn_like(real_data2), pred1),axis=1)
@@ -635,13 +635,13 @@ def train_syndiff(rank, gpu, args):
             #
             pred1 = torch.cat((real_data2, pred1, gen_non_diffusive_1to2(pred1), fake_sample2_tilda[:,[0],:]),axis=-1)
             torchvision.utils.save_image(pred1, os.path.join(exp_path, 'sample1_translated_epoch_{}.png'.format(epoch)), normalize=True)
-            writer.add_image('train/sample1_translated',pred1,epoch)
+            writer.add_images('train/sample1_translated',pred1,epoch)
 
             x2_t = torch.cat((torch.randn_like(real_data2),real_data1),axis=1)
             fake_sample2 = sample_from_model(pos_coeff, gen_diffusive_2, args.num_timesteps, x2_t, T, args)
             fake_sample2 = torch.cat((real_data1, fake_sample2),axis=-1)
             torchvision.utils.save_image(fake_sample2, os.path.join(exp_path, 'sample2_discrete_epoch_{}.png'.format(epoch)), normalize=True)
-            writer.add_image('train/sample1_discrete',fake_sample2,epoch)
+            writer.add_images('train/sample1_discrete',fake_sample2,epoch)
             pred2 = gen_non_diffusive_1to2(real_data1)
             #
             x1_t = torch.cat((torch.randn_like(real_data1), pred2),axis=1)
@@ -649,7 +649,7 @@ def train_syndiff(rank, gpu, args):
             #            
             pred2 = torch.cat((real_data1, pred2, gen_non_diffusive_2to1(pred2), fake_sample1_tilda[:,[0],:]),axis=-1)
             torchvision.utils.save_image(pred2, os.path.join(exp_path, 'sample2_translated_epoch_{}.png'.format(epoch)), normalize=True)
-            writer.add_image('train/sample2_translated',pred2,epoch)
+            writer.add_images('train/sample2_translated',pred2,epoch)
             if args.save_content:
                 if epoch % args.save_content_every == 0:
                     print('Saving content.')
